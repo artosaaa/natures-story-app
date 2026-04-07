@@ -34,20 +34,20 @@
 
 <!-- CRITICAL: inline loader styles load instantly before anything else -->
 <style>
-html,body{margin:0;padding:0;background:#060e07;overflow:hidden;}
+html,body{margin:0;padding:0;background:#060e07;}
 #scrLoading{
   position:fixed;inset:0;z-index:9999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:#060e07;overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
 }
-#lBrand{font-size:11px;color:rgba(201,185,106,.7);letter-spacing:7px;text-align:center;margin-bottom:14px;opacity:0;transform:translateY(10px);transition:all .7s ease;}
-#l420{font-size:88px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;text-align:center;opacity:0;transform:scale(.75);transition:all .9s cubic-bezier(.34,1.56,.64,1);}
-#lTag{font-size:12px;color:rgba(201,185,106,.6);letter-spacing:7px;text-align:center;margin-top:10px;opacity:0;transform:translateY(8px);transition:all .7s ease;}
+#lBrand{font-size:11px;color:rgba(201,185,106,.7);letter-spacing:7px;text-align:center;margin-bottom:14px;opacity:0;transform:translateY(10px);transition:opacity .7s ease,transform .7s ease;}
+#l420{font-size:88px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;text-align:center;opacity:0;transform:scale(.75);transition:opacity .9s cubic-bezier(.34,1.56,.64,1),transform .9s cubic-bezier(.34,1.56,.64,1);}
+#lTag{font-size:12px;color:rgba(201,185,106,.6);letter-spacing:7px;text-align:center;margin-top:10px;opacity:0;transform:translateY(8px);transition:opacity .7s ease,transform .7s ease;}
 #lLine{width:0;height:1px;background:linear-gradient(90deg,transparent,#c9b96a,transparent);margin:22px auto;transition:width 1s ease;}
 #lBarWrap{width:260px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;margin:0 auto 14px;overflow:hidden;opacity:0;transition:opacity .5s ease;}
-#loadBar{height:100%;width:0%;background:linear-gradient(90deg,#39ff14,#c9b96a);border-radius:2px;}
-#loadMsg{font-size:11px;color:rgba(201,185,106,.4);letter-spacing:2px;text-align:center;min-height:16px;opacity:0;transition:opacity .5s ease;}
+#loadBar{height:100%;width:0%;background:linear-gradient(90deg,#39ff14,#c9b96a);border-radius:2px;transition:width .1s linear;}
+#loadMsg{font-size:11px;color:rgba(201,185,106,.4);letter-spacing:2px;text-align:center;min-height:16px;opacity:0;transition:opacity .3s ease;}
 #bgGlow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(57,255,20,.07) 0%,transparent 65%);opacity:0;transition:opacity 2s ease;pointer-events:none;}
 #particles{position:absolute;inset:0;pointer-events:none;z-index:1;}
 #curtainL{position:absolute;top:0;left:0;width:50%;height:100%;background:#060e07;z-index:4;transition:transform 1.5s cubic-bezier(.77,0,.18,1);}
@@ -57,7 +57,7 @@ html,body{margin:0;padding:0;background:#060e07;overflow:hidden;}
 @keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg) scale(.8);}15%{opacity:1;}85%{opacity:.8;}100%{opacity:0;transform:translateY(-200px) rotate(400deg) scale(.2);}}
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;}
 :root{
@@ -394,28 +394,8 @@ body{
 </head>
 <body>
 
-<!-- INSTANT SPINNER CSS — must be before loader HTML -->
-<style>
-#initSpinner{
-  position:fixed;inset:0;z-index:9999;background:#060e07;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .4s ease;
-}
-#initSpinner .ring{
-  width:48px;height:48px;
-  border:3px solid rgba(57,255,20,.15);
-  border-top-color:#39ff14;
-  border-radius:50%;
-  animation:initSpin .7s linear infinite;
-}
-@keyframes initSpin{to{transform:rotate(360deg);}}
-</style>
-
-<!-- This shows in milliseconds — before any JS loads -->
-<div id="initSpinner"><div class="ring"></div></div>
-
-<!-- FULL LOADER — fades in after spinner -->
-<div id="scrLoading" style="opacity:0;transition:opacity .5s ease;">
+<!-- INSTANT LOADER — visible from frame 1 -->
+<div id="scrLoading">
   <div id="bgGlow"></div>
   <div id="particles"></div>
   <div id="curtainL"></div>
@@ -426,29 +406,26 @@ body{
     <div id="lTag">LOYALTY & SPIN</div>
     <div id="lLine"></div>
     <div id="lBarWrap"><div id="loadBar"></div></div>
-    <div id="loadMsg">INITIALIZING...</div>
+    <div id="loadMsg">LOADING...</div>
   </div>
 </div>
 
-<!-- Runs immediately — no waiting -->
 <script>
-(function(){
-  // Step 1: spinner shows instantly (already visible from HTML)
-  // Step 2: after 600ms fade spinner out, fade cinematic loader in
-  setTimeout(function(){
-    var spinner=document.getElementById('initSpinner');
-    var loader=document.getElementById('scrLoading');
-    if(spinner){spinner.style.opacity='0';setTimeout(function(){spinner.remove();},400);}
-    if(loader){loader.style.opacity='1';}
-    // Step 3: start cinematic animations
-    setTimeout(function(){var g=document.getElementById('bgGlow');if(g)g.style.opacity='1';},200);
-    setTimeout(function(){var b=document.getElementById('lBrand');if(b){b.style.opacity='1';b.style.transform='translateY(0)';}},400);
-    setTimeout(function(){var l=document.getElementById('l420');if(l){l.style.opacity='1';l.style.transform='scale(1)';setTimeout(function(){l.style.animation='pulse420 2.5s ease-in-out infinite';},800);}},700);
-    setTimeout(function(){var t=document.getElementById('lTag');if(t){t.style.opacity='1';t.style.transform='translateY(0)';}},1000);
-    setTimeout(function(){document.getElementById('lLine').style.width='180px';},1200);
-    setTimeout(function(){var bw=document.getElementById('lBarWrap'),m=document.getElementById('loadMsg');if(bw)bw.style.opacity='1';if(m)m.style.opacity='1';},1400);
-  },600);
-})();
+// Runs immediately — triggers animations right away
+requestAnimationFrame(function(){
+  requestAnimationFrame(function(){
+    var g=document.getElementById('bgGlow');
+    var b=document.getElementById('lBrand');
+    var l=document.getElementById('l420');
+    var t=document.getElementById('lTag');
+    if(g)g.style.opacity='1';
+    setTimeout(function(){if(b){b.style.opacity='1';b.style.transform='translateY(0)';}},150);
+    setTimeout(function(){if(l){l.style.opacity='1';l.style.transform='scale(1)';setTimeout(function(){if(l)l.style.animation='pulse420 2.5s ease-in-out infinite';},800);}},400);
+    setTimeout(function(){if(t){t.style.opacity='1';t.style.transform='translateY(0)';}},800);
+    setTimeout(function(){var ln=document.getElementById('lLine');if(ln)ln.style.width='180px';},1000);
+    setTimeout(function(){var bw=document.getElementById('lBarWrap'),m=document.getElementById('loadMsg');if(bw)bw.style.opacity='1';if(m)m.style.opacity='1';},1200);
+  });
+});
 </script>
 
 <style>
