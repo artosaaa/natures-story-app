@@ -18,7 +18,7 @@
   .field label { font-size: 0.8rem; }
   .pc .pi { font-size: 2rem; }
   .pc .pt { font-size: 0.9rem; }
-  .wheel-wrap { width: 300px; height: 330px; transform: scale(1.25); margin: 24px 0; }
+  .wheel-wrap { width: 280px; height: 310px; margin: 8px auto; }
   .mc-name { font-size: 1.5rem; }
   .m-name { font-size: 1rem; }
   .m-sub { font-size: 0.8rem; }
@@ -680,10 +680,10 @@ body{
   <div class="wheel-wrap">
     <div class="ptr"></div>
     <div id="wheelRingWrap" style="position:relative;width:310px;height:310px;display:flex;align-items:center;justify-content:center;">
-      <!-- Slow idle spinning ring — CSS only, smooth -->
-      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15);animation:idleRingSpin 12s linear infinite;"></div>
-      <!-- Second inner ring counter-rotating, slower -->
-      <div style="position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(57,255,20,.15);animation:idleRingSpin 20s linear infinite reverse;"></div>
+      <!-- Outer ring - very slow, one rotation per 30 seconds -->
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15);animation:idleRingSpin 30s linear infinite;"></div>
+      <!-- Inner ring - opposite direction, even slower -->
+      <div style="position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(57,255,20,.15);animation:idleRingSpin 50s linear infinite reverse;"></div>
       <!-- Canvas for actual spin -->
       <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .3s;"></canvas>
       <!-- Center shown during idle -->
@@ -2168,11 +2168,11 @@ function runLoader(){
 }
 
 // ══ START ══
-drawWheel(wA);
-startIdleSpin(); // wheel always slowly spinning
+// Don't draw wheel at startup - ring shows instead
+// drawWheel only called during actual spin
 setInterval(()=>{
-  if(profile&&hasSpunToday()){const el=document.getElementById('countdown');if(el)el.textContent=timeLeft();}
-},60000);
+  if(isOwner()||hasSpunToday()){const el=document.getElementById('countdown');if(el)el.textContent=timeLeft();}
+},30000);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&currentUser)updateInboxBadge();
 });
