@@ -37,15 +37,20 @@
 html,body{margin:0;padding:0;background:#060e07;}
 #nsLoader{
   position:fixed;inset:0;z-index:9999;background:#060e07;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
   font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
-  transition:opacity .4s ease;
+  transition:opacity .5s ease;
 }
-#nsLoader .ns-brand{font-size:11px;color:rgba(201,185,106,.7);letter-spacing:6px;}
-#nsLoader .ns-420{font-size:80px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;animation:ns420Pulse 2s ease-in-out infinite;}
-#nsLoader .ns-sub{font-size:11px;color:rgba(201,185,106,.5);letter-spacing:5px;}
-#nsLoader .ns-ring{width:36px;height:36px;border:3px solid rgba(57,255,20,.15);border-top-color:#39ff14;border-radius:50%;animation:nsSpinRing .8s linear infinite;}
-@keyframes ns420Pulse{0%,100%{text-shadow:0 0 40px rgba(57,255,20,.8);}50%{text-shadow:0 0 70px rgba(57,255,20,1),0 0 140px rgba(57,255,20,.4);}}
+#nsLoader .ns-brand{font-size:11px;color:rgba(201,185,106,.0);letter-spacing:6px;animation:nsFadeUp .8s ease .2s forwards;}
+#nsLoader .ns-420{font-size:86px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;opacity:0;animation:nsPop .9s cubic-bezier(.34,1.56,.64,1) .5s forwards,ns420Pulse 2.5s ease-in-out 1.4s infinite;}
+#nsLoader .ns-sub{font-size:11px;color:rgba(201,185,106,.0);letter-spacing:5px;animation:nsFadeUp .8s ease .9s forwards;}
+#nsLoader .ns-divider{width:0px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,185,106,.5),transparent);animation:nsLine 1s ease 1.2s forwards;}
+#nsLoader .ns-ring{width:32px;height:32px;border:2.5px solid rgba(57,255,20,.15);border-top-color:#39ff14;border-radius:50%;animation:nsSpinRing .8s linear infinite;opacity:0;animation:nsSpinRing .8s linear infinite,nsFadeUp .5s ease 1.4s forwards;}
+#nsLoader .ns-msg{font-size:10px;color:rgba(201,185,106,.0);letter-spacing:3px;animation:nsFadeUp .5s ease 1.6s forwards;min-height:14px;transition:opacity .3s ease;}
+@keyframes nsFadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes nsPop{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
+@keyframes nsLine{from{width:0px;}to{width:160px;}}
+@keyframes ns420Pulse{0%,100%{text-shadow:0 0 40px rgba(57,255,20,.8),0 0 80px rgba(57,255,20,.3);}50%{text-shadow:0 0 70px rgba(57,255,20,1),0 0 140px rgba(57,255,20,.5),0 0 200px rgba(57,255,20,.15);}}
 @keyframes nsSpinRing{to{transform:rotate(360deg);}}
 </style>
 
@@ -391,7 +396,9 @@ body{
   <div class="ns-brand">✦ NATURE'S STORY ✦</div>
   <div class="ns-420">4/20</div>
   <div class="ns-sub">LOYALTY & SPIN</div>
+  <div class="ns-divider"></div>
   <div class="ns-ring"></div>
+  <div class="ns-msg" id="nsMsg">LOADING YOUR ACCOUNT...</div>
 </div>
 
 <style>
@@ -1031,9 +1038,23 @@ function handleErr(e,fallback='Something went wrong.'){
 
 // ══ INIT ══
 async function init(){
+  // Cycle loading messages while waiting
+  const msgs=['LOADING YOUR ACCOUNT...','SETTING UP REWARDS...','ALMOST READY...'];
+  let mi=0;
+  const msgEl=document.getElementById('nsMsg');
+  const msgTimer=setInterval(()=>{
+    mi=(mi+1)%msgs.length;
+    if(msgEl){msgEl.style.opacity='0';setTimeout(()=>{if(msgEl){msgEl.textContent=msgs[mi];msgEl.style.opacity='1';}},300);}
+  },1400);
+
+  const start=Date.now();
   try{
     const{data:{session},error}=await sb.auth.getSession();
     if(error)throw error;
+    // Always show loader minimum 2.5s so it feels smooth
+    const wait=Math.max(0,2500-(Date.now()-start));
+    await new Promise(r=>setTimeout(r,wait));
+    clearInterval(msgTimer);
     if(session){
       currentUser=session.user;
       if(currentUser.email===ADMIN_EMAIL){isAdmin=true;await loadAdmin();}
@@ -1042,6 +1063,7 @@ async function init(){
       showScreen('scrAuth');
     }
   }catch(e){
+    clearInterval(msgTimer);
     handleErr(e,'Could not connect. Check your internet.');
   }
 }
