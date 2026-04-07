@@ -235,7 +235,7 @@ body{
 .m-badge.lock{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);}
 
 /* WHEEL */
-.wheel-wrap{position:relative;width:100%;max-width:320px;height:330px;display:flex;align-items:center;justify-content:center;margin:4px auto;overflow:hidden;touch-action:pan-y;}
+.wheel-wrap{position:relative;width:320px;max-width:100%;height:365px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;margin:4px auto;touch-action:pan-y;}
 /* Spinning green ring around wheel - CSS only, no canvas redraw */
 #wc{position:absolute;top:22px;border-radius:50%;box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 60px rgba(57,255,20,.1);}
 
@@ -656,18 +656,10 @@ body{
   </div>
 
   <div class="wheel-wrap">
-    <div class="ptr"></div>
-    <div id="wheelRingWrap" style="position:relative;width:310px;height:310px;display:flex;align-items:center;justify-content:center;">
-      <!-- Static ring — NO animation, just glows softly -->
-      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.65);box-shadow:0 0 18px rgba(57,255,20,.45),0 0 50px rgba(57,255,20,.12);animation:ringGlow 4s ease-in-out infinite;"></div>
-      <!-- Canvas — hidden until spin, shown during spin only -->
-      <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .4s;z-index:3;"></canvas>
-      <!-- Center — always visible at rest -->
-      <div id="wheelCenter" style="position:absolute;z-index:4;text-align:center;pointer-events:none;">
-        <div style="font-size:44px;">🌿</div>
-        <div style="font-size:12px;font-weight:700;color:var(--green-bright);margin-top:6px;letter-spacing:1px;">TAP TO SPIN</div>
-      </div>
-    </div>
+    <!-- Pointer arrow at top -->
+    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:20;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid #39ff14;filter:drop-shadow(0 0 8px #39ff14);"></div>
+    <!-- Wheel canvas — always visible -->
+    <canvas id="wc" width="310" height="310" style="width:310px;height:310px;display:block;border-radius:50%;box-shadow:0 0 20px rgba(57,255,20,.3);margin-top:22px;"></canvas>
   </div>
 
   <button class="btn btn-green" id="spinBtn" onclick="doSpin()" style="max-width:270px;font-size:20px;letter-spacing:3px;margin-bottom:14px;">🌿 SPIN!</button>
@@ -1430,21 +1422,9 @@ function checkDailyBanner(){
 }
 
 // ══ WHEEL ══
-const canvas=document.getElementById('wc'),ctx=canvas.getContext('2d');
-// Scale for retina/high-DPI displays — makes text crisp
-const DPR=window.devicePixelRatio||2;
-const CANVAS_SIZE=310;
-canvas.width=CANVAS_SIZE*DPR;
-canvas.height=CANVAS_SIZE*DPR;
-canvas.style.width=CANVAS_SIZE+'px';
-canvas.style.height=CANVAS_SIZE+'px';
-ctx.scale(DPR,DPR);
-const CX=CANVAS_SIZE/2,CY=CANVAS_SIZE/2,R=CX-4;
-let wA=-Math.PI/2,spinning=false,idleAnimId=null;
-
-// Idle spin — CSS handles the ring animation, no canvas redraw needed
-function startIdleSpin(){ /* ring animates via CSS */ }
-function stopIdleSpin(){ /* nothing to stop */ }
+// Canvas initialized at bottom START section
+function startIdleSpin(){ }
+function stopIdleSpin(){ }
 // Use unique prize segments (8 visual slices)
 const WHEEL_SEGMENTS=[
   {label:'TRY AGAIN',emoji:'🍀',color:'#111f11'},
@@ -1485,17 +1465,9 @@ async function doSpin(){
   if(spinning||!profile)return;
   if(hasSpunToday()){checkDailyBanner();return;}
   stopIdleSpin();
-  // Show canvas, hide ring UI
-  const wc=document.getElementById('wc');
-  const ring=document.getElementById('wheelRingWrap');
-  const center=document.getElementById('wheelCenter');
-  if(wc){wc.style.opacity='1';}
-  if(center){center.style.visibility='hidden';center.style.opacity='0';}
   spinning=true;document.getElementById('spinBtn').disabled=true;
-  // Pick winner using weighted random
   const prizeIdx=WEIGHTED_POOL[Math.floor(Math.random()*WEIGHTED_POOL.length)];
   const prize=PRIZES[prizeIdx];
-  // Find matching wheel segment to land on (visual only)
   const segIdx=WHEEL_SEGMENTS.findIndex(s=>s.label===prize.label);
   const landSeg=segIdx>=0?segIdx:Math.floor(Math.random()*WHEEL_SEGMENTS.length);
   const n=WHEEL_SEGMENTS.length,sl=(2*Math.PI)/n;
@@ -1510,9 +1482,6 @@ async function doSpin(){
     })(performance.now());
   });
   spinning=false;document.getElementById('spinBtn').disabled=false;wA=wA%(2*Math.PI);
-  // Hide canvas, bring center back
-  if(wc){wc.style.opacity='0';}
-  if(center){center.style.visibility='visible';center.style.opacity='1';}
   // Save to DB
   try{
     let sp=(profile.spin_points||0)+prize.pts;
@@ -1545,10 +1514,7 @@ async function doSpin(){
 
 function closeResult(){
   document.getElementById('resultOv').classList.remove('show');
-  const wc=document.getElementById('wc');
-  const center=document.getElementById('wheelCenter');
-  if(wc)wc.style.opacity='0';
-  if(center){center.style.visibility='visible';center.style.opacity='1';}
+  drawWheel(wA);
   renderAll();checkDailyBanner();
 }
 
@@ -2149,10 +2115,20 @@ function runLoader(){
 }
 
 // ══ START ══
-// Don't draw wheel at startup - ring shows instead
-// drawWheel only called during actual spin
+// Draw wheel immediately so it's always visible
+const canvas=document.getElementById('wc'),ctx=canvas.getContext('2d');
+const DPR=window.devicePixelRatio||2;
+const CANVAS_SIZE=310;
+canvas.width=CANVAS_SIZE*DPR;
+canvas.height=CANVAS_SIZE*DPR;
+canvas.style.width=CANVAS_SIZE+'px';
+canvas.style.height=CANVAS_SIZE+'px';
+ctx.scale(DPR,DPR);
+const CX=CANVAS_SIZE/2,CY=CANVAS_SIZE/2,R=CX-4;
+let wA=-Math.PI/2,spinning=false,idleAnimId=null;
+drawWheel(wA);
 setInterval(()=>{
-  if(isOwner()||hasSpunToday()){const el=document.getElementById('countdown');if(el)el.textContent=timeLeft();}
+  if(isOwner()||(profile&&hasSpunToday())){const el=document.getElementById('countdown');if(el)el.textContent=timeLeft();}
 },30000);
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&currentUser)updateInboxBadge();
