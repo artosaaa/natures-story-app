@@ -542,10 +542,10 @@ body{
   <div id="f420Banner" style="display:none;width:100%;max-width:420px;background:linear-gradient(135deg,#0a2a0a,#061806);border:2px solid var(--green-bright);border-radius:15px;padding:14px 18px;margin-bottom:12px;position:relative;overflow:hidden;">
     <div style="position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.06;pointer-events:none;">🌿</div>
     <div style="display:flex;align-items:center;gap:12px;">
-      <div style="font-size:34px;flex-shrink:0;animation:phoneRing 4s ease-in-out infinite;">🏷️</div>
+      <div style="font-size:34px;flex-shrink:0;">🏷️</div>
       <div style="flex:1;">
         <div style="font-size:15px;font-weight:700;color:var(--green-bright);letter-spacing:-.1px;">4/20 Founding Member</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:3px;line-height:1.5;">You registered on 4/20 — <strong style="color:var(--green-bright);">10% OFF every visit, forever.</strong><br>Show this to staff at checkout 🌿</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:3px;line-height:1.5;"><strong style="color:var(--green-bright);">10% OFF every visit, forever.</strong><br>Show this to staff at checkout 🌿</div>
       </div>
     </div>
     <div style="margin-top:10px;background:rgba(57,255,20,.1);border:1px solid rgba(57,255,20,.3);border-radius:10px;padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:var(--green-bright);">
@@ -680,22 +680,13 @@ body{
     <div class="ptr"></div>
     <!-- CSS spinning ring replaces canvas idle animation -->
     <div id="wheelRingWrap" style="position:relative;width:310px;height:310px;display:flex;align-items:center;justify-content:center;">
-      <!-- Outer spinning ring with arrows -->
-      <div id="wheelRing" style="position:absolute;inset:0;border-radius:50%;border:4px solid rgba(57,255,20,.5);animation:ringRotate 4s linear infinite;box-shadow:0 0 20px rgba(57,255,20,.3),inset 0 0 20px rgba(57,255,20,.05);"></div>
-      <!-- Arrow markers on the ring -->
-      <div style="position:absolute;inset:0;border-radius:50%;animation:ringRotate 4s linear infinite;">
-        <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:16px;filter:drop-shadow(0 0 6px #39ff14);">▼</div>
-        <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:16px;filter:drop-shadow(0 0 6px #39ff14);">▲</div>
-        <div style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:16px;filter:drop-shadow(0 0 6px #39ff14);">▶</div>
-        <div style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:16px;filter:drop-shadow(0 0 6px #39ff14);">◀</div>
-      </div>
-      <!-- Inner glow ring -->
-      <div style="position:absolute;inset:20px;border-radius:50%;border:1px solid rgba(57,255,20,.2);animation:ringRotate 8s linear infinite reverse;"></div>
-      <!-- Canvas for actual spin (hidden until spin button pressed) -->
+      <!-- Static glowing ring border - 2px, no spin -->
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15),inset 0 0 12px rgba(57,255,20,.05);"></div>
+      <!-- Canvas for actual spin -->
       <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .3s;"></canvas>
       <!-- Center content shown during idle -->
       <div id="wheelCenter" style="position:relative;z-index:5;text-align:center;">
-        <div style="font-size:48px;animation:ns420Pulse 2.5s ease-in-out infinite;">🌿</div>
+        <div style="font-size:48px;">🌿</div>
         <div style="font-size:13px;font-weight:700;color:var(--green-bright);margin-top:6px;letter-spacing:1px;">TAP TO SPIN</div>
       </div>
     </div>
@@ -930,6 +921,17 @@ body{
         <button class="btn btn-green btn-sm" onclick="addBonusPts()">Add</button>
       </div>
       <div id="bonusOk" style="font-size:11px;color:var(--green);margin-top:5px;font-weight:700;"></div>
+    </div>
+
+    <!-- GRANT 4/20 MEMBERSHIP -->
+    <div style="background:rgba(57,255,20,.06);border:1px solid rgba(57,255,20,.3);border-radius:11px;padding:12px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--green-bright);margin-bottom:6px;">🏷️ 4/20 FOUNDING MEMBER</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:10px;">Grants permanent 10% off every visit — shows as badge on their account</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div id="mp420Status" style="flex:1;font-size:12px;font-weight:700;"></div>
+        <button id="mp420Btn" class="btn btn-green btn-sm" onclick="toggle420Member()">Grant</button>
+      </div>
+      <div id="mp420Ok" style="font-size:11px;color:var(--green);margin-top:5px;font-weight:700;"></div>
     </div>
 
     <button class="btn btn-outline" style="width:100%;" onclick="closeOv('memberPop')">Close</button>
@@ -1423,7 +1425,9 @@ function timeLeft(){
 function checkDailyBanner(){
   const b=document.getElementById('dailyBanner'),btn=document.getElementById('spinBtn');if(!b||!btn)return;
   if(isOwner()){
-    b.classList.remove('show');
+    // Always show countdown but never disable the button
+    b.classList.add('show');
+    document.getElementById('countdown').textContent=timeLeft();
     btn.disabled=false;btn.textContent='🌿 SPIN!';
     btn.style.animation='siBtnPulse 2s ease-in-out infinite';
     return;
@@ -1433,8 +1437,6 @@ function checkDailyBanner(){
     document.getElementById('countdown').textContent=timeLeft();
     btn.disabled=true;btn.textContent='✅ Come Back Tomorrow!';
     btn.style.animation='none';
-    // Wheel still spins slowly so they can see it
-    if(!spinning&&!idleAnimId)startIdleSpin();
   }else{
     b.classList.remove('show');btn.disabled=false;btn.textContent='🌿 SPIN!';
     btn.style.animation='siBtnPulse 2s ease-in-out infinite';
@@ -1638,7 +1640,42 @@ function openMemberPop(id,first,last,phone,email,sp,dp,spins,joined){
   document.getElementById('bonusAmt').value='';
   document.getElementById('spendOk').textContent='';
   document.getElementById('bonusOk').textContent='';
+  document.getElementById('mp420Ok').textContent='';
+  // Load 420 status for this member
+  sb.from('profiles').select('is_420_member').eq('id',id).single().then(({data})=>{
+    const is420=data?.is_420_member||false;
+    const statusEl=document.getElementById('mp420Status');
+    const btnEl=document.getElementById('mp420Btn');
+    if(statusEl)statusEl.textContent=is420?'✅ Active — 10% off always':'❌ Not granted';
+    if(statusEl)statusEl.style.color=is420?'var(--green-bright)':'rgba(255,255,255,.4)';
+    if(btnEl)btnEl.textContent=is420?'Revoke':'Grant';
+    if(btnEl)btnEl.className=is420?'btn btn-danger btn-sm':'btn btn-green btn-sm';
+  });
   document.getElementById('memberPop').classList.add('show');
+}
+
+async function toggle420Member(){
+  const{data:m}=await sb.from('profiles').select('is_420_member,first_name').eq('id',adminMemberId).single();
+  const current=m?.is_420_member||false;
+  const newVal=!current;
+  await sb.from('profiles').update({is_420_member:newVal}).eq('id',adminMemberId);
+  // Update UI
+  const statusEl=document.getElementById('mp420Status');
+  const btnEl=document.getElementById('mp420Btn');
+  const ok=document.getElementById('mp420Ok');
+  if(statusEl){statusEl.textContent=newVal?'✅ Active — 10% off always':'❌ Not granted';statusEl.style.color=newVal?'var(--green-bright)':'rgba(255,255,255,.4)';}
+  if(btnEl){btnEl.textContent=newVal?'Revoke':'Grant';btnEl.className=newVal?'btn btn-danger btn-sm':'btn btn-green btn-sm';}
+  if(ok)ok.textContent=newVal?`✅ 4/20 membership granted to ${m.first_name}!`:`Revoked from ${m.first_name}.`;
+  // Send inbox message to member
+  if(newVal){
+    await sb.from('messages').insert({
+      recipient_id:adminMemberId,
+      subject:'🏷️ You\'re a 4/20 Founding Member!',
+      body:`Hey ${m.first_name}! 🌿\n\nGreat news — you've been granted 4/20 Founding Member status!\n\n🏷️ You now get 10% OFF every single visit, forever.\n\nShow your account screen to staff at checkout to claim your discount.\n\nThank you for being part of the family!\n— Nature's Story Team`,
+      read:false,
+    });
+  }
+  setTimeout(()=>{if(ok)ok.textContent='';},3000);
 }
 
 async function addSpendPts(){
