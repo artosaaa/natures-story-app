@@ -427,6 +427,7 @@ body{
 
 <style>
 @keyframes ringRotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes idleRingSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes siBtnPulse{0%,100%{box-shadow:0 4px 20px rgba(57,255,20,.35),0 0 0 0 rgba(57,255,20,0);}50%{box-shadow:0 4px 30px rgba(57,255,20,.6),0 0 0 8px rgba(57,255,20,.08);}}
 </style>
@@ -672,19 +673,20 @@ body{
   </div>
 
   <div class="daily-banner" id="dailyBanner">
-    <div><div style="font-size:13px;font-weight:900;color:var(--gold);">Daily Spin Used ✅</div><div style="font-size:10px;color:var(--gray);margin-top:2px;">Next spin in</div></div>
+    <div><div style="font-size:13px;font-weight:900;color:var(--gold);" id="bannerTitle">Daily Spin Used ✅</div><div style="font-size:10px;color:var(--gray);margin-top:2px;" id="bannerSub">Next spin in</div></div>
     <div style="font-size:20px;font-weight:900;color:var(--green);text-shadow:0 0 10px rgba(57,255,20,.4);" id="countdown">—</div>
   </div>
 
   <div class="wheel-wrap">
     <div class="ptr"></div>
-    <!-- CSS spinning ring replaces canvas idle animation -->
     <div id="wheelRingWrap" style="position:relative;width:310px;height:310px;display:flex;align-items:center;justify-content:center;">
-      <!-- Static glowing ring border - 2px, no spin -->
-      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15),inset 0 0 12px rgba(57,255,20,.05);"></div>
+      <!-- Slow idle spinning ring — CSS only, smooth -->
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15);animation:idleRingSpin 12s linear infinite;"></div>
+      <!-- Second inner ring counter-rotating, slower -->
+      <div style="position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(57,255,20,.15);animation:idleRingSpin 20s linear infinite reverse;"></div>
       <!-- Canvas for actual spin -->
       <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .3s;"></canvas>
-      <!-- Center content shown during idle -->
+      <!-- Center shown during idle -->
       <div id="wheelCenter" style="position:relative;z-index:5;text-align:center;">
         <div style="font-size:48px;">🌿</div>
         <div style="font-size:13px;font-weight:700;color:var(--green-bright);margin-top:6px;letter-spacing:1px;">TAP TO SPIN</div>
@@ -1424,21 +1426,29 @@ function timeLeft(){
 }
 function checkDailyBanner(){
   const b=document.getElementById('dailyBanner'),btn=document.getElementById('spinBtn');if(!b||!btn)return;
+  const title=document.getElementById('bannerTitle');
+  const sub=document.getElementById('bannerSub');
+  const cd=document.getElementById('countdown');
   if(isOwner()){
-    // Always show countdown but never disable the button
+    // Show countdown but spin button stays enabled
     b.classList.add('show');
-    document.getElementById('countdown').textContent=timeLeft();
+    if(title)title.textContent='👑 Owner Mode — Unlimited Spins';
+    if(sub)sub.textContent='Resets in';
+    if(cd)cd.textContent=timeLeft();
     btn.disabled=false;btn.textContent='🌿 SPIN!';
     btn.style.animation='siBtnPulse 2s ease-in-out infinite';
     return;
   }
   if(hasSpunToday()){
     b.classList.add('show');
-    document.getElementById('countdown').textContent=timeLeft();
+    if(title)title.textContent='Daily Spin Used ✅';
+    if(sub)sub.textContent='Next spin in';
+    if(cd)cd.textContent=timeLeft();
     btn.disabled=true;btn.textContent='✅ Come Back Tomorrow!';
     btn.style.animation='none';
   }else{
-    b.classList.remove('show');btn.disabled=false;btn.textContent='🌿 SPIN!';
+    b.classList.remove('show');
+    btn.disabled=false;btn.textContent='🌿 SPIN!';
     btn.style.animation='siBtnPulse 2s ease-in-out infinite';
   }
 }
