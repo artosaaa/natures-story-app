@@ -353,24 +353,24 @@ body{
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.85);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  z-index:9000;align-items:flex-end;justify-content:center;
-  padding:0;
+  z-index:9000;align-items:center;justify-content:center;
+  padding:16px;
 }
 .overlay.show{display:flex;animation:fadeIn .25s var(--ease);}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 .popup{
-  background:rgba(15,25,16,.95);
+  background:rgba(15,25,16,.97);
   backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
-  border:1px solid var(--border);border-top:1px solid rgba(255,255,255,.12);
-  border-radius:24px 24px 0 0;
-  padding:8px 20px 40px;
-  width:100%;max-width:500px;
-  animation:slideUp .35s var(--spring);
-  max-height:90vh;overflow-y:auto;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  padding:28px 24px 32px;
+  width:100%;max-width:380px;
+  animation:popIn .35s var(--spring);
+  max-height:88vh;overflow-y:auto;
+  text-align:center;
 }
-@keyframes slideUp{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
-/* Drag handle */
-.popup::before{content:'';display:block;width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:8px auto 20px;}
+@keyframes popIn{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+/* Drag handle removed - centered popup doesn't need it */
 
 /* INBOX */
 .inbox-row{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s var(--ease);}
@@ -755,18 +755,32 @@ body{
   <!-- REQUEST SPEND POINTS -->
   <div class="sec">💰 REQUEST SPEND POINTS</div>
   <div class="card" style="margin-bottom:12px;">
-    <div style="font-size:13px;color:var(--gold);margin-bottom:12px;line-height:1.6;">Spent money at the store? Submit how much you spent and our staff will review and add your loyalty points!</div>
+    <div style="font-size:13px;color:var(--gold);margin-bottom:12px;line-height:1.6;">Spent money at the store? Submit your purchase details and our staff will review and add your loyalty points!</div>
     <div class="field">
       <label>Amount Spent ($)</label>
       <input type="number" id="reqAmt" placeholder="e.g. 50" min="1"/>
     </div>
-    <div class="field">
-      <label>Date of Purchase</label>
-      <input type="date" id="reqDate"/>
+    <div style="display:flex;gap:10px;">
+      <div class="field" style="flex:1;">
+        <label>Date of Purchase</label>
+        <input type="date" id="reqDate"/>
+      </div>
+      <div class="field" style="flex:1;">
+        <label>Time of Purchase</label>
+        <input type="time" id="reqTime" placeholder="e.g. 2:30 PM"/>
+      </div>
     </div>
     <div class="field">
-      <label>Note (optional)</label>
-      <input type="text" id="reqNote" placeholder="e.g. bought 2 eighths"/>
+      <label>Product &amp; Quantity</label>
+      <input type="text" id="reqQty" placeholder="e.g. 2x eighths Blue Dream"/>
+    </div>
+    <div class="field">
+      <label>Your Email (so we can contact you)</label>
+      <input type="email" id="reqEmail" placeholder="you@email.com"/>
+    </div>
+    <div class="field">
+      <label>Additional Note (optional)</label>
+      <input type="text" id="reqNote" placeholder="Anything else we should know"/>
     </div>
     <div class="ok" id="reqOk"></div>
     <div class="err" id="reqErr"></div>
@@ -782,6 +796,10 @@ body{
   <div class="sec">🆘 SUPPORT</div>
   <div class="card" style="margin-bottom:12px;">
     <div class="card-sub" style="margin-bottom:14px;">Have an issue or need help? Send us a message and we'll get back to you!</div>
+    <div class="field">
+      <label>Your Email (required)</label>
+      <input type="email" id="supportEmail" placeholder="you@email.com"/>
+    </div>
     <div class="field">
       <label>Type</label>
       <select id="supportType" style="color:var(--white);">
@@ -1141,7 +1159,10 @@ async function adminLogin(){
 
 async function signOut(){
   try{await sb.auth.signOut();}catch(e){}
-  currentUser=null;profile=null;isAdmin=false;goStep(1);showScreen('scrAuth');
+  currentUser=null;profile=null;isAdmin=false;
+  showGlobalNav(false);
+  goStep(1);showScreen('scrAuth');
+}
 }
 
 // ══ LOAD PROFILE ══
@@ -1832,17 +1853,25 @@ async function saveNotifs(){
 async function submitSpendRequest(){
   const amt=parseFloat(document.getElementById('reqAmt').value);
   const date=document.getElementById('reqDate').value;
+  const time=document.getElementById('reqTime').value;
+  const qty=document.getElementById('reqQty').value.trim();
+  const email=document.getElementById('reqEmail').value.trim();
   const note=document.getElementById('reqNote').value.trim();
   const ok=document.getElementById('reqOk'),err=document.getElementById('reqErr');
   if(!amt||amt<=0){err.textContent='⚠️ Enter a valid amount.';return;}
   if(!date){err.textContent='⚠️ Select the date of purchase.';return;}
+  if(!email){err.textContent='⚠️ Please enter your email so we can contact you.';return;}
+  if(!qty){err.textContent='⚠️ Please enter the product and quantity.';return;}
   err.textContent='';
   const{error}=await sb.from('spend_requests').insert({
     user_id:currentUser.id,
     name:profile.first_name+' '+profile.last_name,
     phone:profile.phone||profile.email,
+    email:email,
     amount:amt,
     purchase_date:date,
+    purchase_time:time||null,
+    quantity:qty||null,
     note:note||null,
     status:'pending',
   });
@@ -1850,6 +1879,9 @@ async function submitSpendRequest(){
   ok.textContent='✅ Request submitted! Staff will review within 24 hours.';
   document.getElementById('reqAmt').value='';
   document.getElementById('reqDate').value='';
+  document.getElementById('reqTime').value='';
+  document.getElementById('reqQty').value='';
+  document.getElementById('reqEmail').value='';
   document.getElementById('reqNote').value='';
   setTimeout(()=>ok.textContent='',5000);
   loadMyRequests();
@@ -1876,14 +1908,16 @@ async function loadSpendRequests(){
   if(!data||!data.length){el.innerHTML='<div class="empty">No requests yet.</div>';return;}
   el.innerHTML=data.map(r=>`
     <div style="background:var(--card);border:1px solid ${r.status==='pending'?'var(--gold)':'var(--border)'};border-radius:12px;padding:13px;margin-bottom:9px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
           <div style="font-size:14px;font-weight:900;">${r.name}</div>
-          <div style="font-size:10px;color:var(--gray);">${r.phone} · ${new Date(r.purchase_date).toLocaleDateString()}</div>
+          <div style="font-size:10px;color:var(--gold);margin-top:2px;">📧 ${r.email||r.phone||'—'}</div>
+          <div style="font-size:10px;color:var(--gray);margin-top:1px;">📅 ${new Date(r.purchase_date).toLocaleDateString()}${r.purchase_time?' at '+r.purchase_time:''}</div>
+          ${r.quantity?`<div style="font-size:10px;color:var(--gray);">📦 ${r.quantity}</div>`:''}
+          ${r.note?`<div style="font-size:10px;color:var(--gray);">📝 ${r.note}</div>`:''}
         </div>
-        <div style="font-size:20px;font-weight:900;color:var(--gold);">$${r.amount}</div>
+        <div style="font-size:22px;font-weight:900;color:var(--gold);flex-shrink:0;">$${r.amount}</div>
       </div>
-      ${r.note?`<div style="font-size:11px;color:var(--gray);margin-bottom:8px;">📝 ${r.note}</div>`:''}
       ${r.status==='pending'?`
         <div style="display:flex;gap:7px;">
           <button onclick="approveRequest('${r.id}','${r.user_id}',${r.amount})" style="flex:1;background:var(--green);color:#0a1a0c;border:none;border-radius:20px;padding:8px;font-size:12px;font-weight:900;cursor:pointer;">✅ APPROVE</button>
@@ -2008,21 +2042,24 @@ async function loadAdminReviews(){
 
 // ══ SUPPORT ══
 async function submitSupport(){
+  const email=document.getElementById('supportEmail').value.trim();
   const type=document.getElementById('supportType').value;
   const msg=document.getElementById('supportMsg').value.trim();
   const ok=document.getElementById('supportOk'),err=document.getElementById('supportErr');
+  if(!email){err.textContent='⚠️ Please enter your email so we can reply to you.';return;}
   if(!msg){err.textContent='⚠️ Please describe your issue.';return;}
   err.textContent='';
   const{error}=await sb.from('support_requests').insert({
     user_id:currentUser.id,
     name:profile.first_name+' '+profile.last_name,
-    email:profile.email||'',
+    email:email,
     phone:profile.phone||'',
     type,message:msg,status:'open',
     created_at:new Date().toISOString(),
   });
   if(error){err.textContent='⚠️ '+error.message;return;}
-  ok.textContent='✅ Sent! We\'ll get back to you soon.';
+  ok.textContent='✅ Sent! We\'ll get back to you at '+email+' soon.';
+  document.getElementById('supportEmail').value='';
   document.getElementById('supportMsg').value='';
   setTimeout(()=>ok.textContent='',4000);
 }
