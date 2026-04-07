@@ -372,9 +372,9 @@ body{
 /* OVERLAY — smooth slide up */
 .overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.7);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  z-index:200;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.85);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  z-index:9000;align-items:flex-end;justify-content:center;
   padding:0;
 }
 .overlay.show{display:flex;animation:fadeIn .25s var(--ease);}
@@ -426,8 +426,7 @@ body{
 </div>
 
 <style>
-@keyframes ringRotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes idleRingSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes ringGlow{0%,100%{box-shadow:0 0 18px rgba(57,255,20,.45),0 0 50px rgba(57,255,20,.12);}50%{box-shadow:0 0 28px rgba(57,255,20,.7),0 0 70px rgba(57,255,20,.2);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes siBtnPulse{0%,100%{box-shadow:0 4px 20px rgba(57,255,20,.35),0 0 0 0 rgba(57,255,20,0);}50%{box-shadow:0 4px 30px rgba(57,255,20,.6),0 0 0 8px rgba(57,255,20,.08);}}
 </style>
@@ -680,16 +679,14 @@ body{
   <div class="wheel-wrap">
     <div class="ptr"></div>
     <div id="wheelRingWrap" style="position:relative;width:310px;height:310px;display:flex;align-items:center;justify-content:center;">
-      <!-- Outer ring - very slow, one rotation per 30 seconds -->
-      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.6);box-shadow:0 0 12px rgba(57,255,20,.4),0 0 30px rgba(57,255,20,.15);animation:idleRingSpin 30s linear infinite;"></div>
-      <!-- Inner ring - opposite direction, even slower -->
-      <div style="position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(57,255,20,.15);animation:idleRingSpin 50s linear infinite reverse;"></div>
-      <!-- Canvas for actual spin -->
-      <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .3s;"></canvas>
-      <!-- Center shown during idle -->
-      <div id="wheelCenter" style="position:relative;z-index:5;text-align:center;">
-        <div style="font-size:48px;">🌿</div>
-        <div style="font-size:13px;font-weight:700;color:var(--green-bright);margin-top:6px;letter-spacing:1px;">TAP TO SPIN</div>
+      <!-- Static ring — NO animation, just glows softly -->
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(57,255,20,.65);box-shadow:0 0 18px rgba(57,255,20,.45),0 0 50px rgba(57,255,20,.12);animation:ringGlow 4s ease-in-out infinite;"></div>
+      <!-- Canvas — hidden until spin, shown during spin only -->
+      <canvas id="wc" width="310" height="310" style="width:310px;height:310px;position:absolute;opacity:0;transition:opacity .4s;z-index:3;"></canvas>
+      <!-- Center — always visible at rest -->
+      <div id="wheelCenter" style="position:absolute;z-index:4;text-align:center;pointer-events:none;">
+        <div style="font-size:44px;">🌿</div>
+        <div style="font-size:12px;font-weight:700;color:var(--green-bright);margin-top:6px;letter-spacing:1px;">TAP TO SPIN</div>
       </div>
     </div>
   </div>
@@ -1513,8 +1510,8 @@ async function doSpin(){
   const wc=document.getElementById('wc');
   const ring=document.getElementById('wheelRingWrap');
   const center=document.getElementById('wheelCenter');
-  if(wc)wc.style.opacity='1';
-  if(center)center.style.display='none';
+  if(wc){wc.style.opacity='1';}
+  if(center){center.style.visibility='hidden';center.style.opacity='0';}
   spinning=true;document.getElementById('spinBtn').disabled=true;
   // Pick winner using weighted random
   const prizeIdx=WEIGHTED_POOL[Math.floor(Math.random()*WEIGHTED_POOL.length)];
@@ -1534,11 +1531,9 @@ async function doSpin(){
     })(performance.now());
   });
   spinning=false;document.getElementById('spinBtn').disabled=false;wA=wA%(2*Math.PI);
-  // After spin — hide canvas, show ring again
-  setTimeout(()=>{
-    if(wc)wc.style.opacity='0';
-    if(center)center.style.display='block';
-  },2000);
+  // Hide canvas, bring center back
+  if(wc){wc.style.opacity='0';}
+  if(center){center.style.visibility='visible';center.style.opacity='1';}
   // Save to DB
   try{
     let sp=(profile.spin_points||0)+prize.pts;
@@ -1569,7 +1564,14 @@ async function doSpin(){
   }
 }
 
-function closeResult(){document.getElementById('resultOv').classList.remove('show');renderAll();checkDailyBanner();}
+function closeResult(){
+  document.getElementById('resultOv').classList.remove('show');
+  const wc=document.getElementById('wc');
+  const center=document.getElementById('wheelCenter');
+  if(wc)wc.style.opacity='0';
+  if(center){center.style.visibility='visible';center.style.opacity='1';}
+  renderAll();checkDailyBanner();
+}
 
 // ══ REDEEM ══
 async function doRedeem(id,name,desc,cost){
