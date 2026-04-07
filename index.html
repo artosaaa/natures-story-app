@@ -32,29 +32,21 @@
 </style>
 <title>Nature's Story — Loyalty</title>
 
-<!-- CRITICAL: inline loader styles load instantly before anything else -->
+<!-- Loader: shows instantly -->
 <style>
 html,body{margin:0;padding:0;background:#060e07;}
-#scrLoading{
-  position:fixed;inset:0;z-index:9999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#060e07;overflow:hidden;
+#nsLoader{
+  position:fixed;inset:0;z-index:9999;background:#060e07;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
   font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  transition:opacity .4s ease;
 }
-#lBrand{font-size:11px;color:rgba(201,185,106,.7);letter-spacing:7px;text-align:center;margin-bottom:14px;opacity:0;transform:translateY(10px);transition:opacity .7s ease,transform .7s ease;}
-#l420{font-size:88px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;text-align:center;opacity:0;transform:scale(.75);transition:opacity .9s cubic-bezier(.34,1.56,.64,1),transform .9s cubic-bezier(.34,1.56,.64,1);}
-#lTag{font-size:12px;color:rgba(201,185,106,.6);letter-spacing:7px;text-align:center;margin-top:10px;opacity:0;transform:translateY(8px);transition:opacity .7s ease,transform .7s ease;}
-#lLine{width:0;height:1px;background:linear-gradient(90deg,transparent,#c9b96a,transparent);margin:22px auto;transition:width 1s ease;}
-#lBarWrap{width:260px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;margin:0 auto 14px;overflow:hidden;opacity:0;transition:opacity .5s ease;}
-#loadBar{height:100%;width:0%;background:linear-gradient(90deg,#39ff14,#c9b96a);border-radius:2px;transition:width .1s linear;}
-#loadMsg{font-size:11px;color:rgba(201,185,106,.4);letter-spacing:2px;text-align:center;min-height:16px;opacity:0;transition:opacity .3s ease;}
-#bgGlow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(57,255,20,.07) 0%,transparent 65%);opacity:0;transition:opacity 2s ease;pointer-events:none;}
-#particles{position:absolute;inset:0;pointer-events:none;z-index:1;}
-#curtainL{position:absolute;top:0;left:0;width:50%;height:100%;background:#060e07;z-index:4;transition:transform 1.5s cubic-bezier(.77,0,.18,1);}
-#curtainR{position:absolute;top:0;right:0;width:50%;height:100%;background:#060e07;z-index:4;transition:transform 1.5s cubic-bezier(.77,0,.18,1);}
-#loadContent{position:relative;z-index:3;text-align:center;padding:24px;}
-@keyframes pulse420{0%,100%{text-shadow:0 0 60px rgba(57,255,20,.9),0 0 120px rgba(57,255,20,.35);}50%{text-shadow:0 0 90px rgba(57,255,20,1),0 0 180px rgba(57,255,20,.55),0 0 260px rgba(57,255,20,.18);}}
-@keyframes leafFloat{0%{opacity:0;transform:translateY(0) rotate(0deg) scale(.8);}15%{opacity:1;}85%{opacity:.8;}100%{opacity:0;transform:translateY(-200px) rotate(400deg) scale(.2);}}
+#nsLoader .ns-brand{font-size:11px;color:rgba(201,185,106,.7);letter-spacing:6px;}
+#nsLoader .ns-420{font-size:80px;font-weight:900;color:#39ff14;line-height:1;letter-spacing:-2px;animation:ns420Pulse 2s ease-in-out infinite;}
+#nsLoader .ns-sub{font-size:11px;color:rgba(201,185,106,.5);letter-spacing:5px;}
+#nsLoader .ns-ring{width:36px;height:36px;border:3px solid rgba(57,255,20,.15);border-top-color:#39ff14;border-radius:50%;animation:nsSpinRing .8s linear infinite;}
+@keyframes ns420Pulse{0%,100%{text-shadow:0 0 40px rgba(57,255,20,.8);}50%{text-shadow:0 0 70px rgba(57,255,20,1),0 0 140px rgba(57,255,20,.4);}}
+@keyframes nsSpinRing{to{transform:rotate(360deg);}}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -394,39 +386,13 @@ body{
 </head>
 <body>
 
-<!-- INSTANT LOADER — visible from frame 1 -->
-<div id="scrLoading">
-  <div id="bgGlow"></div>
-  <div id="particles"></div>
-  <div id="curtainL"></div>
-  <div id="curtainR"></div>
-  <div id="loadContent">
-    <div id="lBrand">✦ NATURE'S STORY ✦</div>
-    <div id="l420">4/20</div>
-    <div id="lTag">LOYALTY & SPIN</div>
-    <div id="lLine"></div>
-    <div id="lBarWrap"><div id="loadBar"></div></div>
-    <div id="loadMsg">LOADING...</div>
-  </div>
+<!-- LOADER — simple, instant, reliable -->
+<div id="nsLoader">
+  <div class="ns-brand">✦ NATURE'S STORY ✦</div>
+  <div class="ns-420">4/20</div>
+  <div class="ns-sub">LOYALTY & SPIN</div>
+  <div class="ns-ring"></div>
 </div>
-
-<script>
-// Runs immediately — triggers animations right away
-requestAnimationFrame(function(){
-  requestAnimationFrame(function(){
-    var g=document.getElementById('bgGlow');
-    var b=document.getElementById('lBrand');
-    var l=document.getElementById('l420');
-    var t=document.getElementById('lTag');
-    if(g)g.style.opacity='1';
-    setTimeout(function(){if(b){b.style.opacity='1';b.style.transform='translateY(0)';}},150);
-    setTimeout(function(){if(l){l.style.opacity='1';l.style.transform='scale(1)';setTimeout(function(){if(l)l.style.animation='pulse420 2.5s ease-in-out infinite';},800);}},400);
-    setTimeout(function(){if(t){t.style.opacity='1';t.style.transform='translateY(0)';}},800);
-    setTimeout(function(){var ln=document.getElementById('lLine');if(ln)ln.style.width='180px';},1000);
-    setTimeout(function(){var bw=document.getElementById('lBarWrap'),m=document.getElementById('loadMsg');if(bw)bw.style.opacity='1';if(m)m.style.opacity='1';},1200);
-  });
-});
-</script>
 
 <style>
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
@@ -1065,15 +1031,9 @@ function handleErr(e,fallback='Something went wrong.'){
 
 // ══ INIT ══
 async function init(){
-  runLoader();
-  const start=Date.now();
   try{
     const{data:{session},error}=await sb.auth.getSession();
     if(error)throw error;
-    // Wait minimum 5s so loader can fully play
-    const elapsed=Date.now()-start;
-    const remaining=Math.max(0,4000-elapsed);
-    await new Promise(r=>setTimeout(r,remaining));
     if(session){
       currentUser=session.user;
       if(currentUser.email===ADMIN_EMAIL){isAdmin=true;await loadAdmin();}
@@ -1082,7 +1042,6 @@ async function init(){
       showScreen('scrAuth');
     }
   }catch(e){
-    await new Promise(r=>setTimeout(r,5000));
     handleErr(e,'Could not connect. Check your internet.');
   }
 }
@@ -1745,13 +1704,21 @@ async function broadcast(){
 }
 
 // ══ NAV ══
+function hideLoader(){
+  const l=document.getElementById('nsLoader');
+  if(l){l.style.opacity='0';setTimeout(()=>{if(l)l.remove();// Start sign in button pulse
+    const btn=document.getElementById('siBtn');
+    if(btn)btn.style.animation='siBtnPulse 2s ease-in-out infinite';
+  },400);}
+}
+
 function showScreen(id){
+  hideLoader();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id);
   if(el){
     el.classList.add('active');
     window.scrollTo({top:0,behavior:'instant'});
-    // Haptic feedback on supported devices
     if(navigator.vibrate)navigator.vibrate(6);
   }
 }
@@ -2103,85 +2070,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 });
 function runLoader(){
-  const msgs=['PREPARING YOUR EXPERIENCE...','LOADING YOUR PRIZES...','SETTING UP REWARDS...','ALMOST READY...','WELCOME TO NATURE\'S STORY 🌿'];
-
-  // Stage 1 — glow
-  setTimeout(()=>{ const g=document.getElementById('bgGlow'); if(g)g.style.opacity='1'; },200);
-
-  // Stage 2 — content scale in
-  setTimeout(()=>{ const c=document.getElementById('loadContent'); if(c){c.style.opacity='1';c.style.transform='scale(1)';} },500);
-
-  // Stage 3 — brand
-  setTimeout(()=>{ const b=document.getElementById('lBrand'); if(b){b.style.opacity='1';b.style.transform='translateY(0)';} },800);
-
-  // Stage 4 — 4/20 spring pop + pulse loop
-  setTimeout(()=>{
-    const l=document.getElementById('l420');
-    if(l){l.style.opacity='1';l.style.transform='scale(1)';setTimeout(()=>{l.style.animation='pulse420 2.5s ease-in-out infinite';},1000);}
-  },1100);
-
-  // Stage 5 — tagline
-  setTimeout(()=>{ const t=document.getElementById('lTag'); if(t){t.style.opacity='1';t.style.transform='translateY(0)';} },1500);
-
-  // Stage 6 — divider line
-  setTimeout(()=>{ const line=document.getElementById('lLine'); if(line)line.style.width='180px'; },1700);
-
-  // Stage 7 — bar & msg
-  setTimeout(()=>{ const bw=document.getElementById('lBarWrap'),msg=document.getElementById('loadMsg'); if(bw)bw.style.opacity='1'; if(msg)msg.style.opacity='1'; },1900);
-
-  // Stage 8 — floating leaves loop
-  const particles=document.getElementById('particles');
-  const emojis=['🌿','🍃','🌱','💚','✨','🍀','⭐','🌲'];
-  let count=0;
-  const leafLoop=setInterval(()=>{
-    if(!particles)return;
-    const p=document.createElement('div');
-    const size=12+Math.random()*20;
-    p.style.cssText=`position:absolute;font-size:${size}px;left:${Math.random()*100}%;top:${60+Math.random()*40}%;animation:leafFloat ${3+Math.random()*4}s ease forwards;pointer-events:none;opacity:0;z-index:2;`;
-    p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-    particles.appendChild(p);
-    setTimeout(()=>p.remove(),8000);
-    if(++count>80)clearInterval(leafLoop);
-  },100);
-
-  // Stage 9 — progress bar (slow fill over ~3s)
-  let progress=0, msgIdx=0;
-  const bar=document.getElementById('loadBar');
-  const msgEl=document.getElementById('loadMsg');
-  const barTick=setInterval(()=>{
-    progress+=1;
-    if(bar)bar.style.width=Math.min(progress,92)+'%';
-    if([18,36,55,74].includes(progress)&&msgs[msgIdx]){
-      if(msgEl){msgEl.style.opacity='0';setTimeout(()=>{if(msgEl){msgEl.textContent=msgs[msgIdx++];msgEl.style.opacity='1';}},250);}
-    }
-    if(progress>=92)clearInterval(barTick);
-  },35);
-
-  // Stage 10 — finish bar at 4s
-  setTimeout(()=>{
-    clearInterval(barTick);
-    if(bar){bar.style.transition='width .5s ease';bar.style.width='100%';}
-    if(msgEl){msgEl.style.opacity='0';setTimeout(()=>{if(msgEl){msgEl.textContent=msgs[4];msgEl.style.opacity='1';}},300);}
-  },4000);
-
-  // Stage 11 — curtains open at 4.8s
-  setTimeout(()=>{
-    clearInterval(leafLoop);
-    const l=document.getElementById('curtainL'),r=document.getElementById('curtainR');
-    if(l)l.style.transform='translateX(-100%)';
-    if(r)r.style.transform='translateX(100%)';
-  },4800);
-
-  // Stage 12 — fade out whole loader at 6.2s then remove
-  setTimeout(()=>{
-    const s=document.getElementById('scrLoading');
-    if(s){s.style.transition='opacity .6s ease';s.style.opacity='0';setTimeout(()=>{if(s)s.remove();},700);}
-    // Animate sign in button after loader gone
-    setTimeout(()=>{
-      const btn=document.getElementById('siBtn');
-      if(btn)btn.style.animation='siBtnPulse 2s ease-in-out infinite';
-    },800);
-  },6200);
+  // Simple: just hide loader after auth check completes
+  // The loader HTML is already visible instantly
 }
 
 // ══ START ══
