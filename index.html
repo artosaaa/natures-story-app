@@ -1046,8 +1046,17 @@ async function init(){
     clearInterval(msgTimer);
     if(session){
       currentUser=session.user;
-      if(currentUser.email===ADMIN_EMAIL){isAdmin=true;await loadAdmin();}
-      else{await loadProfile();}
+      try{
+        if(currentUser.email===ADMIN_EMAIL){isAdmin=true;await loadAdmin();}
+        else{await loadProfile();}
+      }catch(le){
+        // Stale session whose profile can't be loaded — clear it so the
+        // user isn't permanently locked out on a startup error screen.
+        console.error('Session restore failed',le);
+        try{await sb.auth.signOut();}catch(_){}
+        currentUser=null;profile=null;isAdmin=false;
+        showGlobalNav(false);goStep(1);showScreen('scrAuth');
+      }
     }else{
       showScreen('scrAuth');
     }
@@ -1071,19 +1080,28 @@ function btnReset(btn){
 }
 
 async function doSignIn(){
-  const email=document.getElementById('siEmail').value.trim();
+  const email=document.getElementById('siEmail').value.trim().toLowerCase();
   const pass=document.getElementById('siPass').value;
   const err=document.getElementById('err1'),btn=document.getElementById('siBtn');
   if(!email||!pass){err.textContent='⚠️ Fill in all fields.';return;}
   err.textContent='';btnLoad(btn,'Signing in...');
+  let data;
   try{
-    const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
-    if(error)throw error;
+    const res=await sb.auth.signInWithPassword({email,password:pass});
+    if(res.error)throw res.error;
+    data=res.data;
+  }catch(e){
+    err.textContent='⚠️ Wrong email or password.';
+    btnReset(btn);
+    return;
+  }
+  try{
     currentUser=data.user;
     if(currentUser.email===ADMIN_EMAIL){isAdmin=true;await loadAdmin();}
     else{await loadProfile();}
   }catch(e){
-    err.textContent='⚠️ Wrong email or password.';
+    console.error('Post sign-in load failed',e);
+    err.textContent='⚠️ Signed in, but could not load your account. Please try again.';
     btnReset(btn);
   }
 }
@@ -1092,7 +1110,7 @@ async function doSignUp(){
   const first=document.getElementById('regFirst').value.trim();
   const last=document.getElementById('regLast').value.trim();
   const phone=document.getElementById('regPhone').value.trim();
-  const email=document.getElementById('regEmail').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const pass=document.getElementById('regPass').value;
   const bday=document.getElementById('regBday').value;
   const err=document.getElementById('err2'),btn=document.getElementById('suBtn');
@@ -1133,7 +1151,7 @@ async function doSignUp(){
 }
 
 async function doForgotPass(){
-  const email=document.getElementById('fpEmail').value.trim();
+  const email=document.getElementById('fpEmail').value.trim().toLowerCase();
   const err=document.getElementById('err3'),ok=document.getElementById('fpOk'),btn=document.getElementById('fpBtn');
   if(!email){err.textContent='⚠️ Enter your email.';return;}
   err.textContent='';btnLoad(btn,'Sending reset link...');
@@ -1147,12 +1165,17 @@ async function doForgotPass(){
 }
 
 async function adminLogin(){
-  const email=document.getElementById('adminEmail').value.trim();
+  const email=document.getElementById('adminEmail').value.trim().toLowerCase();
   const pass=document.getElementById('adminPass').value;
   const err=document.getElementById('adminErr');
+  if(!email||!pass){err.textContent='⚠️ Fill in all fields.';return;}
   try{
     const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
     if(error)throw error;
+    if((data.user.email||'').toLowerCase()!==ADMIN_EMAIL){
+      await sb.auth.signOut();
+      throw new Error('Not a staff account.');
+    }
     currentUser=data.user;isAdmin=true;await loadAdmin();
   }catch(e){err.textContent='⚠️ '+(e.message||'Wrong credentials.');}
 }
@@ -1167,9 +1190,18 @@ async function signOut(){
 // ══ LOAD PROFILE ══
 async function loadProfile(){
   try{
-    const{data,error}=await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+    const{data,error}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
     if(error)throw error;
-    if(!data){showScreen('scrAuth');return;}
+    if(!data){
+      // Auth user exists but no profile row (e.g. signup didn't finish).
+      // Sign them out so they can register again cleanly.
+      try{await sb.auth.signOut();}catch(_){}
+      currentUser=null;profile=null;
+      showGlobalNav(false);goStep(2);showScreen('scrAuth');
+      const err=document.getElementById('err2');
+      if(err)err.textContent='⚠️ Finish creating your account below.';
+      return;
+    }
     profile=data;
     await trackVisit();
     renderAll();showGlobalNav(true);
