@@ -446,6 +446,7 @@ body{
       <div class="err" id="err1"></div>
       <button class="btn btn-green" id="siBtn" onclick="doSignIn()" style="position:relative;overflow:hidden;transition:box-shadow .3s,transform .2s cubic-bezier(.34,1.56,.64,1);">SIGN IN 🌿</button>
       <button class="btn btn-outline" onclick="goStep(2)">Create New Account →</button>
+      <button class="btn btn-outline" id="guestBtn" onclick="doGuestSignIn()">👤 Continue as Guest</button>
       <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px;">
         <button style="background:none;border:none;color:var(--golddim);font-size:11px;cursor:pointer;text-decoration:underline;" onclick="goStep(3)">Forgot password?</button>
         <button class="btn btn-outline btn-sm" onclick="showScreen('scrAdminLogin')">🔐 Staff</button>
@@ -1102,6 +1103,34 @@ async function doSignIn(){
   }catch(e){
     console.error('Post sign-in load failed',e);
     err.textContent='⚠️ Signed in, but could not load your account. Please try again.';
+    btnReset(btn);
+  }
+}
+
+async function doGuestSignIn(){
+  const err=document.getElementById('err1'),btn=document.getElementById('guestBtn');
+  err.textContent='';btnLoad(btn,'Starting guest session...');
+  try{
+    const{data,error}=await sb.auth.signInAnonymously();
+    if(error)throw error;
+    currentUser=data.user;
+    const{data:existing}=await sb.from('profiles').select('id').eq('id',currentUser.id).maybeSingle();
+    if(!existing){
+      const np={
+        id:currentUser.id,phone:null,first_name:'Guest',last_name:'',
+        email:currentUser.email||null,birthday:null,
+        spin_points:0,spend_points:0,spins:0,
+        milestones:[],last_spin_date:null,birthday_claimed:0,
+        is_420_member:false,is_guest:true,
+        joined:new Date().toISOString(),extra:{}
+      };
+      const{error:pe}=await sb.from('profiles').insert(np);
+      if(pe)throw pe;
+      profile=np;
+    }
+    await loadProfile();
+  }catch(e){
+    err.textContent='⚠️ '+(e.message||'Could not start guest session.');
     btnReset(btn);
   }
 }
